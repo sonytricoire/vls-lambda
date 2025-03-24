@@ -1,5 +1,9 @@
 # VLS Lambda
 
+[![Python Tests](https://github.com/sonytricoire/vls-lambda/actions/workflows/python-tests.yml/badge.svg)](https://github.com/sonytricoire/vls-lambda/actions/workflows/python-tests.yml)
+[![Python Lint](https://github.com/sonytricoire/vls-lambda/actions/workflows/python-lint.yml/badge.svg)](https://github.com/sonytricoire/vls-lambda/actions/workflows/python-lint.yml)
+[![Deploy to AWS Lambda](https://github.com/sonytricoire/vls-lambda/actions/workflows/deploy.yml/badge.svg)](https://github.com/sonytricoire/vls-lambda/actions/workflows/deploy.yml)
+
 ## Description
 AWS Lambda function to retrieve bike sharing stations data from JCDecaux API and store it in an S3 bucket. This project provides a serverless solution for collecting and storing real-time data from JCDecaux bike sharing systems.
 
@@ -91,6 +95,25 @@ AWS Lambda function to retrieve bike sharing stations data from JCDecaux API and
 - CloudWatch Logs for Lambda function execution
 - CloudWatch Metrics for performance monitoring
 - S3 lifecycle policies for data retention
+
+## Continuous Integration/Deployment
+
+This project uses GitHub Actions for CI/CD:
+
+- **Python Tests**: Runs unit tests on multiple Python versions (3.9, 3.10, 3.11)
+- **Python Lint**: Validates code quality using flake8, black, and isort
+- **Deploy**: Builds and deploys the Lambda function to AWS (triggered manually or on push to master)
+
+To set up the CI/CD pipeline:
+
+1. Add the following secrets to your GitHub repository:
+   - `AWS_ACCESS_KEY_ID`: AWS access key with deployment permissions
+   - `AWS_SECRET_ACCESS_KEY`: AWS secret key
+   - `JCDECAUX_CONTRACT`: JCDecaux contract name
+   - `JCDECAUX_API_KEY`: JCDecaux API key
+   - `S3_BUCKET_NAME`: S3 bucket for data storage
+
+2. For manual deployments, use the "Run workflow" button on the Deploy workflow page.
 
 ## License
 This project is licensed under the MIT License - see the LICENSE file for details.
