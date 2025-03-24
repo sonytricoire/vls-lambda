@@ -32,16 +32,17 @@ class TestLambdaFunction(unittest.TestCase):
             }
         ]'''
 
-    @patch('http.client.HTTPSConnection')
-    def test_successful_api_call(self, mock_connection):
+    @patch('requests.get')
+    def test_successful_api_call(self, mock_get):
         """Test successful API call and S3 upload"""
         # Mock HTTP response
         mock_response = MagicMock()
-        mock_response.status = 200
-        mock_response.read.return_value = self.sample_stations.encode('utf-8')
+        mock_response.status_code = 200
+        mock_response.text = self.sample_stations
+        mock_response.elapsed.total_seconds.return_value = 0.1
         
-        # Mock connection
-        mock_connection.return_value.getresponse.return_value = mock_response
+        # Set up the mock
+        mock_get.return_value = mock_response
         
         # Mock S3 client
         with patch('lambda_modernized.get_s3_client') as mock_s3:
@@ -60,15 +61,17 @@ class TestLambdaFunction(unittest.TestCase):
             # Verify S3 upload was called
             mock_s3_client.put_object.assert_called_once()
 
-    @patch('http.client.HTTPSConnection')
-    def test_api_error(self, mock_connection):
+    @patch('requests.get')
+    def test_api_error(self, mock_get):
         """Test handling of API error"""
         # Mock HTTP response with error
         mock_response = MagicMock()
-        mock_response.status = 403
+        mock_response.status_code = 403
+        mock_response.text = '{ "error" : "Unauthorized" }'
+        mock_response.elapsed.total_seconds.return_value = 0.1
         
-        # Mock connection
-        mock_connection.return_value.getresponse.return_value = mock_response
+        # Set up the mock
+        mock_get.return_value = mock_response
         
         # Call the lambda handler
         event = {}

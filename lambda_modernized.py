@@ -160,7 +160,7 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             })
             
             # Upload the data to S3
-            upload_success = upload_to_s3(result)
+            upload_success = upload_to_s3(result, contract_name=contract, bucket=bucket_name)
             
             if upload_success:
                 return {
@@ -236,17 +236,23 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         }
 
 
-def upload_to_s3(content: str) -> bool:
+def upload_to_s3(content: str, contract_name: str = None, bucket: str = None) -> bool:
     """
     Upload content to an S3 bucket with a timestamped filename.
     
     Args:
         content: The content to upload to S3
+        contract_name: JCDecaux contract name (city)
+        bucket: S3 bucket name
         
     Returns:
         bool: True if upload was successful, False otherwise
     """
     try:
+        # Use provided values or get from environment variables
+        contract_value = contract_name or get_env_var('CONTRACT')
+        bucket_value = bucket or get_env_var('BUCKET_NAME')
+        
         # Get S3 client
         s3 = get_s3_client()
         
@@ -254,21 +260,21 @@ def upload_to_s3(content: str) -> bool:
         timestr = time.strftime("%Y%m%d-%H%M%S")
         
         # Create filename with contract name and timestamp
-        filename = f"{contract}-{timestr}.json"
+        filename = f"{contract_value}-{timestr}.json"
         
         # Create a file-like object from the content string
         fake_handle = io.StringIO(content)
         
         # Upload the content to S3 bucket with the generated filename
         s3.put_object(
-            Bucket=bucket_name, 
+            Bucket=bucket_value, 
             Key=filename, 
             Body=fake_handle.read(),
             ContentType='application/json'
         )
 
         # Log successful upload
-        logger.info(f"File '{filename}' uploaded to S3 bucket '{bucket_name}'")
+        logger.info(f"File '{filename}' uploaded to S3 bucket '{bucket_value}'")
         return True
         
     except ClientError as e:
