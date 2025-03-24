@@ -1,0 +1,82 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: JCDecaux VLS data collector Lambda function
+
+Parameters:
+  Environment:
+    Type: String
+    Default: dev
+    AllowedValues:
+      - dev
+      - test
+      - prod
+    Description: Deployment environment
+
+  JCDecauxContract:
+    Type: String
+    Description: JCDecaux contract name (city)
+
+  JCDecauxApiKey:
+    Type: String
+    Description: JCDecaux API key
+    NoEcho: true
+
+  DataBucketName:
+    Type: String
+    Description: S3 bucket name for storing VLS data
+
+Resources:
+  VLSDataCollectorFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ./
+      Handler: lambda_modernized.lambda_handler
+      Runtime: python3.9
+      Architectures:
+        - arm64  # Using ARM architecture for cost savings
+      MemorySize: 128  # Minimal memory needed for this task
+      Timeout: 10
+      Environment:
+        Variables:
+          CONTRACT: !Ref JCDecauxContract
+          API_KEY: !Ref JCDecauxApiKey
+          BUCKET_NAME: !Ref DataBucketName
+          LOG_LEVEL: !If [IsProd, "INFO", "DEBUG"]
+      Policies:
+        - S3CrudPolicy:
+            BucketName: !Ref DataBucketName
+      Events:
+        ScheduledCollection:
+          Type: Schedule
+          Properties:
+            Schedule: rate(5 minutes)
+            Name: VLSDataCollectionSchedule
+            Description: Collects VLS data every 5 minutes
+            Enabled: true
+
+  VLSDataBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Ref DataBucketName
+      LifecycleConfiguration:
+        Rules:
+          - Id: ArchiveOldData
+            Status: Enabled
+            ExpirationInDays: 90  # Keep data for 90 days
+          - Id: TransitionToGlacier
+            Status: Enabled
+            Transitions:
+              - StorageClass: GLACIER
+                TransitionInDays: 30  # Move to Glacier after 30 days
+
+Conditions:
+  IsProd: !Equals [!Ref Environment, "prod"]
+
+Outputs:
+  VLSDataCollectorFunction:
+    Description: VLS Data Collector Lambda Function ARN
+    Value: !GetAtt VLSDataCollectorFunction.Arn
+
+  VLSDataBucket:
+    Description: S3 Bucket for VLS data storage
+    Value: !Ref VLSDataBucket
