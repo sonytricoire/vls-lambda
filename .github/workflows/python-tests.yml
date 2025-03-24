@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: [3.9, 3.10, 3.11]
+        python-version: ['3.9', '3.10', '3.11']
 
     steps:
     - uses: actions/checkout@v3
@@ -30,7 +30,7 @@ jobs:
     
     - name: Run tests with pytest
       run: |
-        pytest test_lambda.py -v --cov=lambda_modernized
+        pytest test_lambda.py -v --cov=lambda_modernized --no-cov-on-fail
       env:
         CONTRACT: 'paris'
         API_KEY: 'test-api-key'
